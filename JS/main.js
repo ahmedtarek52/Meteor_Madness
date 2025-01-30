@@ -1,3 +1,5 @@
+let isGameOver = false;
+
 class MainMenuScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MainMenuScene' });
@@ -45,6 +47,9 @@ class GameScene extends Phaser.Scene {
         this.load.image('player', 'Assets/player.png');
         this.load.image('meteor', 'Assets/meteor.png');
         this.load.image('PowerUp', 'Assets/PowerUp.jpg');
+        this.load.image('restartImage', 'Assets/Restart.png');
+
+
     }
 
     create() {
@@ -56,13 +61,13 @@ class GameScene extends Phaser.Scene {
 
         this.meteors = this.physics.add.group();
         this.powerUps = this.physics.add.group();
-
         this.score = 0;
         this.elapsedTime = 0;
         this.playerSpeed = 200;
         this.meteorSpeed = 150;
         this.powerUpSpeed = 150;
         this.timePerPower = 10000;
+        
 
         this.scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', fill: '#fff' });
         this.timerText = this.add.text(20, 50, 'Time: 0', { fontSize: '24px', fill: '#fff' });
@@ -70,9 +75,10 @@ class GameScene extends Phaser.Scene {
         this.time.addEvent({ delay: 1000, callback: this.spawnMeteor, callbackScope: this, loop: true });
         this.time.addEvent({ delay: 5000, callback: this.spawnPowerUp, callbackScope: this, loop: true });
         this.time.addEvent({ delay: 1000, callback: this.updateScoreAndTime, callbackScope: this, loop: true });
-
+        
         this.physics.add.overlap(this.player, this.meteors, this.gameOver, null, this);
         this.physics.add.overlap(this.player, this.powerUps, this.playerPower, null, this);
+    
     }
 
     update() {
@@ -94,17 +100,21 @@ class GameScene extends Phaser.Scene {
     }
 
     spawnMeteor() {
+        if(!isGameOver){
         let x = Phaser.Math.Between(50, 750);
         let meteor = this.meteors.create(x, 0, 'meteor').setScale(0.1);
         meteor.setVelocityY(this.meteorSpeed);
         this.meteorSpeed += 5;
+        }
     }
 
     spawnPowerUp() {
+        if(!isGameOver){
         let x = Phaser.Math.Between(50, 750);
         let powerUp = this.powerUps.create(x, 0, 'PowerUp').setScale(0.1);
         powerUp.setVelocityY(this.powerUpSpeed);
         this.powerUpSpeed += 5;
+        }
     }
 
     playerPower(player, powerUp) {
@@ -117,16 +127,39 @@ class GameScene extends Phaser.Scene {
     }
 
     updateScoreAndTime() {
+        if(!isGameOver)
+            {
+
         this.score += 10;
         this.scoreText.setText('Score: ' + this.score);
         this.elapsedTime += 1;
         this.timerText.setText('Time: ' + this.elapsedTime + 's');
+        }
     }
 
     gameOver() {
-        this.scene.pause();
+        isGameOver = true;
+       
+        this.playerSpeed=0;
+        this.powerUpSpeed=0;
+        this.meteorSpeed=0;
+        
+
         this.add.text(300, 250, 'GAME OVER', { fontSize: '32px', fill: '#f00' });
+    
+        let restartButton = this.add.image(400, 350, 'restartImage').setScale(0.5);
+        restartButton.setInteractive();
+    
+        restartButton.on('pointerdown', () => {
+            this.scene.start('GameScene'); 
+            isGameOver=false;
+        });
+    
+        restartButton.on('pointerover', () => restartButton.setScale(0.65));
+        restartButton.on('pointerout', () => restartButton.setScale(0.5));
     }
+    
+    
 }
 
 const config = {
