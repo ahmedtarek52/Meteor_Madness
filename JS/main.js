@@ -145,7 +145,7 @@ class GameScene extends Phaser.Scene {
         this.meteorSpeed=0;
         
 
-        this.add.text(300, 250, 'GAME OVER', { fontSize: '32px', fill: '#f00' });
+        this.add.text(170, 150, 'GAME OVER', { fontSize: '72px', fill: '#f00' });
     
         let restartButton = this.add.image(400, 350, 'restartImage').setScale(0.5);
         restartButton.setInteractive();
