@@ -1,3 +1,167 @@
+let isGameOver = false;
+
+class MainMenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'MainMenuScene' });
+    }
+
+    preload() {
+        this.load.image('background', 'Assets/space.jpg');
+        this.load.image('startButton', 'Assets/NewGame.png');
+        this.load.image('quitButton', 'Assets/Quit.png');
+    }
+
+    create() {
+        this.add.image(400, 300, 'background');
+        this.add.text(100, 150, 'Meteor Madness', { fontSize: '76px', fill: '#fff' });
+
+        let startButton = this.add.image(400, 350, 'startButton').setScale(0.5);
+        startButton.setInteractive();
+
+        startButton.on('pointerdown', () => {
+            this.scene.start('GameScene');
+        });
+
+        startButton.on('pointerover', () => startButton.setScale(0.65));
+        startButton.on('pointerout', () => startButton.setScale(0.5));
+
+        let quitButton = this.add.image(400, 500, 'quitButton').setScale(0.5);
+        quitButton.setInteractive();
+
+        quitButton.on('pointerdown', () => {
+            window.close();
+        });
+
+        quitButton.on('pointerover', () => quitButton.setScale(0.65));
+        quitButton.on('pointerout', () => quitButton.setScale(0.5));
+    }
+}
+
+class GameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'GameScene' });
+    }
+
+    preload() {
+        this.load.image('background', 'Assets/space.jpg');
+        this.load.image('player', 'Assets/player.png');
+        this.load.image('meteor', 'Assets/meteor.png');
+        this.load.image('PowerUp', 'Assets/PowerUp.jpg');
+        this.load.image('restartImage', 'Assets/Restart.png');
+
+
+    }
+
+    create() {
+        this.add.image(400, 300, 'background');
+
+        this.player = this.physics.add.sprite(400, 500, 'player').setScale(0.05);
+        this.player.setCollideWorldBounds(true);
+        this.cursors = this.input.keyboard.createCursorKeys();
+
+        this.meteors = this.physics.add.group();
+        this.powerUps = this.physics.add.group();
+        this.score = 0;
+        this.elapsedTime = 0;
+        this.playerSpeed = 200;
+        this.meteorSpeed = 150;
+        this.powerUpSpeed = 150;
+        this.timePerPower = 10000;
+        
+
+        this.scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', fill: '#fff' });
+        this.timerText = this.add.text(20, 50, 'Time: 0', { fontSize: '24px', fill: '#fff' });
+
+        this.time.addEvent({ delay: 1000, callback: this.spawnMeteor, callbackScope: this, loop: true });
+        this.time.addEvent({ delay: 5000, callback: this.spawnPowerUp, callbackScope: this, loop: true });
+        this.time.addEvent({ delay: 1000, callback: this.updateScoreAndTime, callbackScope: this, loop: true });
+        
+        this.physics.add.overlap(this.player, this.meteors, this.gameOver, null, this);
+        this.physics.add.overlap(this.player, this.powerUps, this.playerPower, null, this);
+    
+    }
+
+    update() {
+        this.player.setVelocity(0);
+
+        if (this.cursors.left.isDown) {
+            this.player.setVelocityX(-this.playerSpeed);
+        } else if (this.cursors.right.isDown) {
+            this.player.setVelocityX(this.playerSpeed);
+        }
+
+        this.meteors.children.iterate(meteor => {
+            if (meteor && meteor.y > 600) meteor.destroy();
+        });
+
+        this.powerUps.children.iterate(powerUp => {
+            if (powerUp && powerUp.y > 600) powerUp.destroy();
+        });
+    }
+
+    spawnMeteor() {
+        if(!isGameOver){
+        let x = Phaser.Math.Between(50, 750);
+        let meteor = this.meteors.create(x, 0, 'meteor').setScale(0.1);
+        meteor.setVelocityY(this.meteorSpeed);
+        this.meteorSpeed += 5;
+        }
+    }
+
+    spawnPowerUp() {
+        if(!isGameOver){
+        let x = Phaser.Math.Between(50, 750);
+        let powerUp = this.powerUps.create(x, 0, 'PowerUp').setScale(0.1);
+        powerUp.setVelocityY(this.powerUpSpeed);
+        this.powerUpSpeed += 5;
+        }
+    }
+
+    playerPower(player, powerUp) {
+        powerUp.destroy();
+        this.playerSpeed = 500;
+
+        this.time.delayedCall(this.timePerPower, () => {
+            this.playerSpeed = 200;
+        }, [], this);
+    }
+
+    updateScoreAndTime() {
+        if(!isGameOver)
+            {
+
+        this.score += 10;
+        this.scoreText.setText('Score: ' + this.score);
+        this.elapsedTime += 1;
+        this.timerText.setText('Time: ' + this.elapsedTime + 's');
+        }
+    }
+
+    gameOver() {
+        isGameOver = true;
+       
+        this.playerSpeed=0;
+        this.powerUpSpeed=0;
+        this.meteorSpeed=0;
+        
+
+        this.add.text(170, 150, 'GAME OVER', { fontSize: '72px', fill: '#f00' });
+    
+        let restartButton = this.add.image(400, 350, 'restartImage').setScale(0.5);
+        restartButton.setInteractive();
+    
+        restartButton.on('pointerdown', () => {
+            this.scene.start('GameScene'); 
+            isGameOver=false;
+        });
+    
+        restartButton.on('pointerover', () => restartButton.setScale(0.65));
+        restartButton.on('pointerout', () => restartButton.setScale(0.5));
+    }
+    
+    
+}
+
 const config = {
     type: Phaser.AUTO,
     width: 800,
@@ -6,87 +170,7 @@ const config = {
         default: 'arcade',
         arcade: { gravity: { y: 0 }, debug: false }
     },
-    scene: { preload, create, update }
+    scene: [MainMenuScene, GameScene]
 };
 
 const game = new Phaser.Game(config);
-let player;
-let cursors;
-let meteors;
-let meteorSpeed = 150;
-let score = 0;
-let scoreText;
-let timerText;
-let elapsedTime = 0;
-
-function preload() {
-    this.load.image('background', 'Assets/space.jpg');
-    this.load.image('player', 'Assets/player.png');
-    this.load.image('meteor', 'assets/meteor.png');
-}
-
-function create() {
-    this.add.image(400, 300, 'background');
-    player = this.physics.add.sprite(400, 500, 'player').setScale(0.05);
-    player.setCollideWorldBounds(true);
-    cursors = this.input.keyboard.createCursorKeys();
-
-    meteors = this.physics.add.group();
-    // this.physics.add.collider(player, meteors, hitMeteor, null, this);
-
-
-    this.time.addEvent({
-        delay: 1000,
-        callback: spawnMeteor,
-        callbackScope: this,
-        loop: true
-    });
-
-    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', fill: '#fff' });
-    timerText = this.add.text(20, 50, 'Time: 0', { fontSize: '24px', fill: '#fff' });
-
-    this.time.addEvent({
-        delay: 1000,
-        callback: updateScoreAndTime,
-        callbackScope: this,
-        loop: true
-    });
-}
-
-function update() {
-
-    player.setVelocity(0);
-    if (cursors.left.isDown) {
-        player.setVelocityX(-200);
-    } else if (cursors.right.isDown) {
-        player.setVelocityX(200);
-    }
-
-    meteors.children.iterate(meteor => {
-        if (meteor && meteor.y > 600) {
-            meteor.destroy();
-        }
-    });
-
-    this.physics.add.overlap(player, meteors, gameOver, null, this);
-}
-
-function spawnMeteor() {
-    let x = Phaser.Math.Between(50,750);
-    let meteor = meteors.create(x, 0, 'meteor').setScale(0.1);
-    meteor.setVelocityY(meteorSpeed);
-    meteorSpeed += 5;
-}
-
-function updateScoreAndTime() {
-    score += 10;
-    scoreText.setText('Score: ' + score);
-
-    elapsedTime += 1;
-    timerText.setText('Time: ' + elapsedTime + 's');
-}
-
-function gameOver() {
-    this.scene.pause();
-    this.add.text(300, 250, 'GAME OVER', { fontSize: '32px', fill: '#f00' });
-}
