@@ -1,4 +1,17 @@
+body{
+    display: flex;
+    padding-top: 100px;
+    background-color: #000000;
+    font-family: Arial, sans-serif;
+    align-items: center;
+    justify-content: center;
+}
+
 h1{
-    color: red;
-    font-size: 50px;
+font-size: 50px;
+color: #636363;
+text-align: center;
+display: block;
+position: absolute;
+top: 5px;
 }
